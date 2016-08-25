@@ -5,11 +5,12 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/full.mk)
 
 $(call inherit-product-if-exists, vendor/digma/hit/hit-vendor.mk)
 
-
-
 DEVICE_PACKAGE_OVERLAYS += device/digma/hit/overlay
 
 LOCAL_PATH := device/digma/hit
+
+PRODUCT_AAPT_CONFIG := large
+PRODUCT_AAPT_PREF_CONFIG := mdpi
 
 PRODUCT_CHARACTERISTICS := default
 
@@ -51,7 +52,7 @@ PRODUCT_COPY_FILES += \
     device/digma/hit/rootdir/root/sbin/busybox:root/sbin/busybox \
     device/digma/hit/rootdir/root/fstab.mt6582:root/fstab.mt6582 \
     device/digma/hit/rootdir/root/init.recovery.mt6582.rc:root/init.recovery.mt6582.rc \
-    device/digma/hit/rootdir/root/init.rc:root/init.rc \
+    device/digma/hit/rootdir/root/init.ssd.rc:root/init.ssd.rc \
     device/digma/hit/rootdir/root/init.mt6582.rc:root/init.mt6582.rc \
     device/digma/hit/rootdir/root/init.modem.rc:root/init.modem.rc \
     device/digma/hit/rootdir/root/ueventd.mt6582.rc:root/ueventd.mt6582.rc \
@@ -107,4 +108,4 @@ PRODUCT_DEVICE := hit
 TARGET_SCREEN_HEIGHT := 1024
 TARGET_SCREEN_WIDTH := 600
 
-$(call inherit-product, frameworks/native/build/tablet-7in-hdpi-1024-dalvik-heap.mk)
+$(call inherit-product, frameworks/native/build/tablet-dalvik-heap.mk)

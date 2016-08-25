@@ -1,10 +1,24 @@
 import init.mt6582.usb.rc
 import init.modem.rc
-import init.ssd.rc
 
 on init
     export LD_PRELOAD /system/lib/libxlog.so
-    
+    export EXTERNAL_STORAGE /storage/sdcard0
+    export SECONDARY_STORAGE /storage/sdcard1
+
+    mkdir /storage/sdcard0 0700 root root
+    mkdir /storage/sdcard1 0700 root root
+
+    symlink /storage/sdcard0 /sdcard
+    symlink /storage/sdcard0 /mnt/sdcard
+
+    mkdir /mnt/media_rw/sdcard0 0700 media_rw media_rw
+    mkdir /mnt/media_rw/sdcard1 0700 media_rw media_rw
+
+    # USB OTG
+    mkdir /storage/usbotg 0700 root root
+    mkdir /mnt/media_rw/usbotg 0700 media_rw media_rw
+
     chown system graphics /dev/ion
     chmod 0644 /dev/ion
 
@@ -32,9 +46,6 @@ on init
     chown media media /dev/ccci_pcm_tx
     chmod 0660 /dev/ccci_pcm_tx
 
-    chown root system /dev/devmap
-    chmod 0440 /dev/devmap
-
     chown bluetooth radio /dev/ttyGS2
     chmod 0660 /dev/ttyGS2
     chown system radio /dev/ttyGS3
@@ -60,7 +71,7 @@ on init
     chown gps gps /sys/class/gpsdrv/gps/pwrsave
     chown gps gps /sys/class/gpsdrv/gps/status
 
-    ## Thermal
+    # Thermal
     #change permissions on thermal devices
     chown root system /proc/mtktscpu/mtktscpu
     chmod 0660 /proc/mtktscpu/mtktscpu
@@ -88,7 +99,7 @@ on init
     chmod 0444 /dev/mtk_jpeg
     chown system camera /dev/mtk_jpeg
 
-    #Camera
+    # Camera
     chmod 0660 /dev/camera-sysram
     chmod 0664 /dev/camera-isp
     chmod 0660 /dev/camera-pipemgr
@@ -96,9 +107,9 @@ on init
     chmod 0660 /dev/kd_camera_flashlight
     chmod 0660 /dev/kd_camera_hw_bus2
     chmod 0660 /dev/FM50AF
+    chmod 0660 /dev/DW9714AF
+    chmod 0660 /dev/DW9718AF
     chmod 0660 /dev/OV8825AF
-    chmod 0660 /dev/OV8826AF
-    chmod 0660 /dev/LITEON3H7AF
     chmod 0660 /dev/CAM_CAL_DRV
 
     chown system camera /dev/camera-sysram
@@ -108,9 +119,9 @@ on init
     chown system camera /dev/kd_camera_flashlight
     chown system camera /dev/kd_camera_hw_bus2
     chown system camera /dev/FM50AF
+    chown system camera /dev/DW9714AF
+    chown system camera /dev/DW9718AF
     chown system camera /dev/OV8825AF
-    chown system camera /dev/OV8826AF
-    chown system camera /dev/LITEON3H7AF
     chown system camera /dev/CAM_CAL_DRV
 
     chown system system /dev/RT_Monitor
@@ -160,14 +171,9 @@ on init
 
     # Charge
     chmod 0666 /dev/MT_pmic_adc_cali
-       
+	
     # Accdet
     chown root radio /sys/devices/platform/Accdet_Driver/driver/accdet_call_state
-
-    # VideoCodec
-    mknod /dev/Vcodec c 160 0
-    chmod 0660 /dev/Vcodec
-    chown system media /dev/Vcodec
 
     # MJC
     chmod 0660 /dev/MJC
@@ -231,24 +237,18 @@ on init
     chmod 0770 /sys/power/tuxonice
     chmod 0220 /sys/power/tuxonice/do_hibernate
 
-    # FM Radio device node
-    mknod /dev/fm     c 193 0;
-    chmod 0660 /dev/fm
-    chown system media /dev/fm
-
     # TV-out
     chmod 0664 /dev/TV-out
 
     #H DMI
     chown meida system /dev/hdmitx
     chmod 0664 /dev/hdmitx
- 
+
     # JPEG
     chmod 0444 /dev/mtk_jpeg
     chown system camera /dev/mtk_jpeg
 
 on post-fs-data
-
     # Create the directories used by the Wireless subsystem
     mkdir /data/misc/wifi 0770 wifi wifi
     mkdir /data/misc/wifi/sockets 0770 wifi wifi
@@ -272,16 +272,25 @@ on post-fs-data
     chown system system /dev/mt6605
     mkdir /data/nfc_socket 0771 nfc radio
 
-    start adbd
-
 on post-fs
     exec /system/xbin/mknod /dev/wmtWifi c 153 0
     chmod 0660 /dev/wmtWifi
     chown system system /dev/wmtWifi
 
+    # VideoCodec
     exec /system/xbin/mknod /dev/Vcodec c 160 0
-    chmod 0660 /dev/Vcodec
+    chmod 0666 /dev/Vcodec
     chown system media /dev/Vcodec
+	
+    # devmap
+    exec /system/xbin/mknod /dev/devmap c 196 0
+    chmod 0444 /dev/devmap
+    chown root system /dev/devmap
+
+    # FM Radio device node
+    exec /system/xbin/mknod /dev/fm c 193 0
+    chmod 0777 /dev/fm
+    chown system media /dev/fm
 
     # for ppp options file
     mkdir /data/misc/ppp 0770 bluetooth net_bt
@@ -328,10 +337,12 @@ on fs
     mkdir /protect_s 0771 system system
 
     mount_all /fstab.mt6582
+    #setprop ro.crypto.fuse_sdcard true
+
+    write /proc/bootprof "INIT:NAND:Mount_END"
 
     mkdir /data/agps_supl 0771 gps system
     mkdir /data/gps_mnl 0771 gps system
-    write /proc/bootprof "INIT:NAND:Mount_END"
 
 on property:wlan.driver.status=ok
 	write /dev/wmtWifi "1"
@@ -398,7 +409,7 @@ service drvbd /system/bin/drvbd
 service nvram_daemon /system/bin/nvram_daemon
     class main
     user root
-    group nvram root
+    group system root
     oneshot
 
 service NvRAMAgent /system/bin/nvram_agent_binder
@@ -541,7 +552,6 @@ service mc64xxd /system/bin/mc64xxd
 #sensor service (end)
 #
 #
-#  moonrotation xda cm12
 #
 #
 
@@ -572,3 +582,54 @@ service BGW /system/xbin/BGW
     group gps system radio
     class main
     oneshot
+
+# virtual sdcard daemon running as media_rw (1023)
+service fuse_sdcard0 /system/bin/sdcard -u 1023 -g 1023 /mnt/media_rw/sdcard0 /storage/sdcard0
+    class late_start
+    disabled
+service fuse_sdcard1 /system/bin/sdcard -u 1023 -g 1023 /mnt/media_rw/sdcard1 /storage/sdcard1
+    class late_start
+    disabled
+service fuse_usbotg /system/bin/sdcard -u 1023 -g 1023 -d /mnt/media_rw/usbotg /storage/usbotg
+    class late_start
+    disabled
+
+
+# CM Performance Profiles
+
+# Powersave
+on property:sys.perf.profile=0
+    write /sys/devices/system/cpu/cpu2/online "1"
+    write /sys/devices/system/cpu/cpu3/online "1"
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq "1300000"
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq "598000"
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "powersave"
+    write /sys/devices/system/cpu/cpu4/online "0"
+    write /sys/devices/system/cpu/cpu5/online "0"
+    write /sys/devices/system/cpu/cpu6/online "0"
+    write /sys/devices/system/cpu/cpu7/online "0"
+
+# Balanced
+on property:sys.perf.profile=1
+    write /sys/devices/system/cpu/cpu2/online "1"
+    write /sys/devices/system/cpu/cpu3/online "1"
+    write /sys/devices/system/cpu/cpu4/online "1"
+    write /sys/devices/system/cpu/cpu5/online "1"
+    write /sys/devices/system/cpu/cpu6/online "1"
+    write /sys/devices/system/cpu/cpu7/online "1"
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq "1664000"
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq "598000"
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "hotplug"
+
+# Performance
+on property:sys.perf.profile=2
+    write /sys/devices/system/cpu/cpu2/online "1"
+    write /sys/devices/system/cpu/cpu3/online "1"
+    write /sys/devices/system/cpu/cpu4/online "1"
+    write /sys/devices/system/cpu/cpu5/online "1"
+    write /sys/devices/system/cpu/cpu6/online "1"
+    write /sys/devices/system/cpu/cpu7/online "1"
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq "1664000"
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq "598000"
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor "performance"
+
