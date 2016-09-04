@@ -6,5 +6,5 @@ CPU     | 1.3GHz
 GPU     | Mali-400MP
 Memory  | 512 RAM
 Shipped Android Version | 4.4.2
-Storage | 8GB
+Storage | 4GB
 Display | 7" 1024 x 600 px
